@@ -22,24 +22,24 @@ app.get('/ping', (req, res) => {
 });
 
 app.post('/webhook', async (req, res) => {
-  // Debug: Dump request to file (Handling circular references)
-  const getCircularReplacer = () => {
-    const seen = new WeakSet();
-    return (key: any, value: any) => {
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) {
-          return '[Circular]';
+  // Debug: Dump request to file (Only in development)
+  if (process.env.NODE_ENV === 'development') {
+    const getCircularReplacer = () => {
+      const seen = new WeakSet();
+      return (key: any, value: any) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular]';
+          }
+          seen.add(value);
         }
-        seen.add(value);
-      }
-      return value;
+        return value;
+      };
     };
-  };
 
-  try {
-    fs.writeFileSync('req_dump.json', JSON.stringify(req, getCircularReplacer(), 2));
-  } catch (e) {
-    console.error('Failed to dump request', e);
+    fs.promises
+      .writeFile('req_dump.json', JSON.stringify(req, getCircularReplacer(), 2))
+      .catch((e) => console.error('Failed to dump request', e));
   }
 
   const eventType =
