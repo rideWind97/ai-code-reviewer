@@ -1,5 +1,7 @@
 import express from 'express';
+import * as fs from 'fs';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 import { GitHubProvider } from '../platforms/github';
 import { GiteaProvider } from '../platforms/gitea';
 import { OpenAIProvider } from '../ai/openai';
@@ -21,9 +23,29 @@ app.get('/ping', (req, res) => {
 });
 
 app.post('/webhook', async (req, res) => {
+  // Debug: Dump request to file (Only in development)
+  if (process.env.NODE_ENV === 'development') {
+    const getCircularReplacer = () => {
+      const seen = new WeakSet();
+      return (key: any, value: any) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular]';
+          }
+          seen.add(value);
+        }
+        return value;
+      };
+    };
+
+    fs.promises
+      .writeFile('req_dump.json', JSON.stringify(req, getCircularReplacer(), 2))
+      .catch((e) => console.error('Failed to dump request', e));
+  }
+
   const eventType =
     req.headers['x-github-event'] || req.headers['x-gitea-event'] || req.headers['x-gitlab-event'];
-  console.log('Received webhook:', eventType);
+  logger.info({ eventType }, 'Received webhook');
 
   let provider;
   if (req.headers['x-github-event']) {
@@ -32,7 +54,7 @@ app.post('/webhook', async (req, res) => {
     provider = giteaProvider;
   } else {
     // Default or GitLab
-    console.log('Unknown or unsupported platform');
+    logger.warn('Unknown or unsupported platform');
     res.status(400).send('Unsupported platform');
     return;
   }
@@ -40,7 +62,7 @@ app.post('/webhook', async (req, res) => {
   try {
     const event = await provider.parseEvent(req);
     if (!event) {
-      console.log('Event ignored (not a PR opened/sync)');
+      logger.info('Event ignored (not a PR opened/sync)');
       res.status(200).send('Ignored');
       return;
     }
@@ -48,17 +70,17 @@ app.post('/webhook', async (req, res) => {
     // Process in background (don't block the webhook response)
     const orchestrator = new ReviewOrchestrator(provider, aiProvider);
     orchestrator.handleEvent(event).catch((err) => {
-      console.error('Error handling event:', err);
+      logger.error({ err }, 'Error handling event');
     });
 
     res.status(200).send('Processing');
   } catch (error) {
-    console.error('Webhook error:', error);
+    logger.error({ error }, 'Webhook error');
     res.status(500).send('Internal Server Error');
   }
 });
 
 const PORT = config.port;
 app.listen(PORT, () => {
-  console.log(`AI Code Reviewer listening on port ${PORT}`);
+  logger.info(`AI Code Reviewer listening on port ${PORT}`);
 });

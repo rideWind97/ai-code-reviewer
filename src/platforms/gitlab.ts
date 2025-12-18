@@ -1,6 +1,7 @@
 import { IPlatformProvider, ReviewEvent, FileChange, ReviewComment } from '../interfaces';
 import { config } from '../config';
 import { Gitlab } from '@gitbeaker/rest';
+import { logger } from '../utils/logger';
 
 export class GitLabProvider implements IPlatformProvider {
   private api: InstanceType<typeof Gitlab>;
@@ -58,7 +59,7 @@ export class GitLabProvider implements IPlatformProvider {
         blobUrl: '', // Not easily available in changes response, can be constructed if needed
       }));
     } catch (e) {
-      console.error('GitLab getChanges error:', e);
+      logger.error({ err: e }, 'GitLab getChanges error');
       return [];
     }
   }
@@ -90,6 +91,33 @@ export class GitLabProvider implements IPlatformProvider {
       } catch (e) {
         console.error(`Failed to post GitLab comment on ${comment.path}:${comment.line}`, e);
       }
+    }
+  }
+
+  async getReviewComments(event: ReviewEvent): Promise<ReviewComment[]> {
+    if (!event.projectId) return [];
+    try {
+      const discussions = await this.api.MergeRequestDiscussions.all(
+        event.projectId,
+        parseInt(event.eventId),
+      );
+
+      const comments: ReviewComment[] = [];
+      for (const discussion of discussions) {
+        for (const note of discussion.notes as any[]) {
+          if (note.position && note.position.new_path && note.position.new_line) {
+            comments.push({
+              path: note.position.new_path,
+              line: note.position.new_line,
+              body: note.body,
+            });
+          }
+        }
+      }
+      return comments;
+    } catch (e) {
+      logger.error({ err: e }, 'Error fetching GitLab comments');
+      return [];
     }
   }
 }

@@ -2,6 +2,7 @@ export interface IPlatformProvider {
   parseEvent(request: any): Promise<ReviewEvent | null>;
   getChanges(event: ReviewEvent): Promise<FileChange[]>;
   postReview(event: ReviewEvent, comments: ReviewComment[]): Promise<void>;
+  getReviewComments(event: ReviewEvent): Promise<ReviewComment[]>;
 }
 
 export interface IAIProvider {

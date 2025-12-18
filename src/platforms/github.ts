@@ -1,6 +1,7 @@
 import { Octokit } from 'octokit';
 import { IPlatformProvider, ReviewEvent, FileChange, ReviewComment } from '../interfaces';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 
 export class GitHubProvider implements IPlatformProvider {
   private octokit: Octokit;
@@ -13,10 +14,7 @@ export class GitHubProvider implements IPlatformProvider {
     const payload = request.body;
     const eventName = request.headers['x-github-event'];
 
-    if (
-      eventName === 'pull_request' &&
-      (payload.action === 'opened' || payload.action === 'synchronize')
-    ) {
+    if (eventName === 'pull_request' && ['synchronize', 'opened'].includes(payload.action)) {
       return {
         platform: 'github',
         eventType: 'pull_request',
@@ -63,5 +61,25 @@ export class GitHubProvider implements IPlatformProvider {
       event: 'COMMENT',
       comments: ghComments,
     });
+  }
+
+  async getReviewComments(event: ReviewEvent): Promise<ReviewComment[]> {
+    try {
+      const { data } = await this.octokit.rest.pulls.listReviewComments({
+        owner: event.owner,
+        repo: event.repoName,
+        pull_number: parseInt(event.eventId),
+      });
+
+      return data.map((c: any) => ({
+        path: c.path,
+        line: c.line || c.original_line || 0,
+        body: c.body,
+        side: c.side as 'LEFT' | 'RIGHT',
+      }));
+    } catch (error) {
+      logger.error({ err: error }, 'Error fetching GitHub comments');
+      return [];
+    }
   }
 }
