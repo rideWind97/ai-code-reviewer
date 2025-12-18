@@ -1,6 +1,7 @@
 import { IPlatformProvider, IAIProvider, ReviewEvent, ReviewContext } from '../interfaces';
 import { getReviewableLines, shouldSkipFile } from '../utils/diff';
 import { logger } from '../utils/logger';
+import { analysisQueue } from '../utils/queue';
 
 export class ReviewOrchestrator {
   constructor(
@@ -29,53 +30,69 @@ export class ReviewOrchestrator {
     );
 
     // 2. Filter & Analyze
-    const allComments = [];
+    const targetFiles = files.filter(
+      (file) => !shouldSkipFile(file.filename) && file.status !== 'deleted' && file.rawDiff,
+    );
 
-    for (const file of files) {
-      if (shouldSkipFile(file.filename) || file.status === 'deleted' || !file.rawDiff) {
-        continue;
-      }
+    logger.info({ targetFiles: targetFiles.length }, 'Files to analyze after filtering');
 
-      logger.info({ filename: file.filename }, 'Analyzing file');
+    const tasks = targetFiles.map((file) => {
+      return analysisQueue.add(async () => {
+        logger.info({ filename: file.filename }, 'Analyzing file');
 
-      // Parse diff to know which lines are valid for comments
-      const validLines = getReviewableLines(file.rawDiff);
+        // Parse diff to know which lines are valid for comments
+        const validLines = getReviewableLines(file.rawDiff);
 
-      // Define Context
-      const context: ReviewContext = {
-        language: 'zh-CN',
-      };
+        // Define Context
+        const context: ReviewContext = {
+          language: 'zh-CN',
+        };
 
-      // Call AI
-      const aiResults = await this.ai.analyzeCode(file, context);
+        try {
+          // Call AI
+          const aiResults = await this.ai.analyzeCode(file, context);
 
-      // Transform AI results to Platform Comments
-      for (const res of aiResults) {
-        if (res.severity === 'info') continue;
+          // Transform AI results to Platform Comments
+          const fileComments = [];
+          for (const res of aiResults) {
+            if (res.severity === 'info') continue;
 
-        // Validation: Ensure the line is in the diff
-        if (!validLines.has(res.lineNumber)) {
-          logger.debug(
-            { line: res.lineNumber },
-            'Skipping comment on line as it is not in the diff context',
-          );
-          continue;
+            // Validation: Ensure the line is in the diff
+            if (!validLines.has(res.lineNumber)) {
+              logger.debug(
+                { line: res.lineNumber },
+                'Skipping comment on line as it is not in the diff context',
+              );
+              continue;
+            }
+
+            // Deduplication: Skip if already commented
+            if (commentedLines.has(`${file.filename}:${res.lineNumber}`)) {
+              logger.info(
+                { file: file.filename, line: res.lineNumber },
+                'Skipping duplicate comment',
+              );
+              continue;
+            }
+
+            fileComments.push({
+              path: file.filename,
+              line: res.lineNumber,
+              body: `**[AI Review - ${res.severity}]**\n\n${res.reviewContent}\n\n${res.suggestion ? '```suggestion\n' + res.suggestion + '\n```' : ''}`,
+              side: 'RIGHT' as const,
+            });
+          }
+          return fileComments;
+        } catch (error) {
+          logger.error({ err: error, file: file.filename }, 'Error analyzing file');
+          return [];
         }
+      });
+    });
 
-        // Deduplication: Skip if already commented
-        if (commentedLines.has(`${file.filename}:${res.lineNumber}`)) {
-          logger.info({ file: file.filename, line: res.lineNumber }, 'Skipping duplicate comment');
-          continue;
-        }
-
-        allComments.push({
-          path: file.filename,
-          line: res.lineNumber,
-          body: `**[AI Review - ${res.severity}]**\n\n${res.reviewContent}\n\n${res.suggestion ? '```suggestion\n' + res.suggestion + '\n```' : ''}`,
-          side: 'RIGHT' as const,
-        });
-      }
-    }
+    // Wait for all tasks to complete
+    const results = await Promise.all(tasks);
+    const allComments = results.flat().filter((c): c is NonNullable<typeof c> => !!c); // Flatten and filter undefined
 
     // 3. Post Reviews
     if (allComments.length > 0) {
