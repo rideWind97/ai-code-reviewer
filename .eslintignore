@@ -1,0 +1,4 @@
+src/**/*.{ts,js,json}
+!dist/**
+!node_modules/**
+
