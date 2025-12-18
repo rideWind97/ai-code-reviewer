@@ -41,6 +41,12 @@ GITEA_TOKEN=xxxxxxxxxxxxxxxxxxxx
 TARGET_BRANCHES=main,master,develop
 # Ignored file patterns
 IGNORE_PATTERNS=package-lock.json,dist,node_modules,yarn.lock
+# Review Language
+REVIEW_LANGUAGE=en
+# Skip Draft PR
+SKIP_DRAFT_PR=true
+# Concurrency Limit
+CONCURRENCY_LIMIT=5
 ```
 
 ## 2. Deployment Modes
@@ -73,6 +79,14 @@ Run as a standalone service, listening for Webhook events in real-time.
 ### Mode B: CLI / CI Integration
 
 Run as a step in your CI/CD pipeline.
+
+## 3. ChatOps (Interactive Commands)
+
+In addition to automatic PR event listening, you can manually trigger reviews by typing commands in the PR/MR comment section (Issue Comments):
+
+- `/review`: Re-review the current PR.
+
+Note: Ensure **Issue comments** (GitHub/Gitea) or **Note events** (GitLab) are enabled in your Webhook settings.
 
 #### 1. GitHub Actions
 
@@ -139,7 +153,7 @@ npx ts-node src/cli/index.ts run \
   --sha <head_commit_sha>
 ```
 
-## 3. Development
+## 4. Development
 
 ### Debug CLI Locally
 

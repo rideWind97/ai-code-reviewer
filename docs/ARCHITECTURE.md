@@ -27,9 +27,13 @@ graph TD
 
     subgraph Core Logic
         Orchestrator[Review Orchestrator]
+        Queue[Concurrency Queue]
         DiffParser[Diff Parser]
         PromptEng[Prompt Engineer]
     end
+
+    Core -->|Schedule| Queue
+    Queue -->|Execute| IAI
 
     Core -->|Use| IPlatform[Interface: IPlatformProvider]
     Core -->|Use| IAI[Interface: IAIProvider]
@@ -50,7 +54,7 @@ All platforms must implement the `IPlatformProvider` interface:
 
 ```typescript
 interface IPlatformProvider {
-  // Parse incoming webhook payload to a standard Event object
+  // Parse incoming webhook payload to a standard Event object (Async)
   parseEvent(request: Request): Promise<ReviewEvent | null>;
 
   // Fetch the file diffs for a specific PR

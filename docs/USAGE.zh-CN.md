@@ -41,6 +41,12 @@ GITEA_TOKEN=xxxxxxxxxxxxxxxxxxxx
 TARGET_BRANCHES=main,master,develop
 # 忽略的文件类型或路径
 IGNORE_PATTERNS=package-lock.json,dist,node_modules,yarn.lock
+# 审查语言
+REVIEW_LANGUAGE=zh-CN
+# 跳过 Draft PR
+SKIP_DRAFT_PR=true
+# 并发限制
+CONCURRENCY_LIMIT=5
 ```
 
 ## 2. 部署模式
@@ -73,6 +79,16 @@ IGNORE_PATTERNS=package-lock.json,dist,node_modules,yarn.lock
 ### 模式 B: CLI / CI 集成
 
 作为 CI/CD 流水线的一个步骤运行，无需维护长期服务。
+
+## 3. 交互式指令 (ChatOps)
+
+除了自动监听 PR 事件，你还可以通过在 PR/MR 的评论区（Issue Comments）输入指令来手动触发审查：
+
+- `/review`: 重新审查当前 PR。
+
+注意：确保 Webhook 配置中勾选了 **Issue comments** (GitHub/Gitea) 或 **Note events** (GitLab)。
+
+## 4. CI 集成详情
 
 #### 1. GitHub Actions
 
