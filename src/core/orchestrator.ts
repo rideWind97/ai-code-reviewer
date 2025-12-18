@@ -2,6 +2,7 @@ import { IPlatformProvider, IAIProvider, ReviewEvent, ReviewContext } from '../i
 import { getReviewableLines, shouldSkipFile } from '../utils/diff';
 import { logger } from '../utils/logger';
 import { analysisQueue } from '../utils/queue';
+import { config } from '../config';
 
 export class ReviewOrchestrator {
   constructor(
@@ -11,6 +12,11 @@ export class ReviewOrchestrator {
 
   async handleEvent(event: ReviewEvent) {
     logger.info({ eventId: event.eventId, repo: event.repoName }, 'Processing event');
+
+    if (config.review.skipDraft && event.isDraft) {
+      logger.info({ eventId: event.eventId }, 'Skipping Draft PR');
+      return;
+    }
 
     // 1. Get Changes & Existing Comments
     const [files, existingComments] = await Promise.all([
@@ -45,7 +51,7 @@ export class ReviewOrchestrator {
 
         // Define Context
         const context: ReviewContext = {
-          language: 'zh-CN',
+          language: config.review.language,
         };
 
         try {

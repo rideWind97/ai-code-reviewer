@@ -28,6 +28,7 @@ export class GiteaProvider implements IPlatformProvider {
         owner: payload.repository.owner.login,
         commitSha: payload.pull_request.head.sha,
         baseSha: payload.pull_request.base.sha,
+        isDraft: payload.pull_request.work_in_progress, // Gitea WIP status
       };
     }
     return null;

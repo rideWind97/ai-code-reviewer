@@ -31,6 +31,7 @@ export class GitLabProvider implements IPlatformProvider {
         owner: payload.project.namespace,
         commitSha: attrs.last_commit.id,
         baseSha: attrs.target.id || payload.diff_refs?.base_sha, // Attempt to get Base SHA
+        isDraft: attrs.work_in_progress, // GitLab WIP/Draft status
       };
     }
     return null;

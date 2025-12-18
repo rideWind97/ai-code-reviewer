@@ -24,6 +24,7 @@ export class GitHubProvider implements IPlatformProvider {
         commitSha: payload.pull_request.head.sha,
         baseSha: payload.pull_request.base.sha,
         installationId: payload.installation?.id,
+        isDraft: payload.pull_request.draft,
       };
     }
     return null;
