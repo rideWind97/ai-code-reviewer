@@ -22,28 +22,28 @@ The project follows a **Clean Architecture / Hexagonal Architecture** to decoupl
 
 ```mermaid
 graph TD
-    User["用户 / Git 平台"] -->|Webhook/CLI| Entry["入口 (Server/CLI)"]
-    Entry --> Core["核心逻辑"]
+    User["User / Git Platform"] -->|Webhook/CLI| Entry["Entry (Server/CLI)"]
+    Entry --> Core["Core Logic"]
 
     subgraph Core Logic
-        Orchestrator["审查编排器"]
-        Queue["并发队列"]
-        DiffParser["Diff 解析器"]
-        PromptEng["Prompt 引擎"]
+        Orchestrator["Review Orchestrator"]
+        Queue["Concurrency Queue"]
+        DiffParser["Diff Parser"]
+        PromptEng["Prompt Engine"]
     end
 
-    Core -->|调度| Queue
-    Queue -->|执行| IAI
+    Core -->|Schedule| Queue
+    Queue -->|Execute| IAI
 
-    Core -->|使用| IPlatform["接口: IPlatformProvider"]
-    Core -->|使用| IAI["接口: IAIProvider"]
+    Core -->|Use| IPlatform["Interface: IPlatformProvider"]
+    Core -->|Use| IAI["Interface: IAIProvider"]
 
-    IPlatform -->|实现| GitHub["GitHub 适配器"]
-    IPlatform -->|实现| GitLab["GitLab 适配器"]
-    IPlatform -->|实现| Gitea["Gitea 适配器"]
+    IPlatform -->|Implement| GitHub["GitHub Adapter"]
+    IPlatform -->|Implement| GitLab["GitLab Adapter"]
+    IPlatform -->|Implement| Gitea["Gitea Adapter"]
 
-    IAI -->|实现| OpenAI["OpenAI 适配器"]
-    IAI -->|实现| OtherAI["DeepSeek/Anthropic 适配器"]
+    IAI -->|Implement| OpenAI["OpenAI Adapter"]
+    IAI -->|Implement| OtherAI["DeepSeek/Anthropic Adapter"]
 ```
 
 ## 3. Module Details
