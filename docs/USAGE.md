@@ -2,178 +2,176 @@
 
 [🇨🇳 中文](./USAGE.zh-CN.md) | **🇺🇸 English**
 
-This document details how to configure, deploy, and use the AI Code Reviewer.
+This document provides a comprehensive guide on configuring, deploying, and using the AI Code Reviewer.
 
-## 1. Environment Configuration (.env)
+## 1. Configuration Reference
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root. Below is a detailed explanation of all supported environment variables.
 
-```ini
-# --- Service Configuration ---
-PORT=4000
-NODE_ENV=production
+### 🤖 AI Service Configuration
 
-# --- AI Service Configuration ---
-AI_PROVIDER=openai
-# OpenAI API Key (Required)
-AI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
-# Model Name (Recommended: gpt-4o, gpt-3.5-turbo)
-AI_MODEL=gpt-4o
-# Optional: Custom API URL (For proxies or compatible models)
-AI_BASE_URL=https://api.openai.com/v1
+| Variable | Required | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `AI_PROVIDER` | **Yes** | The AI provider to use. | `openai`, `deepseek` |
+| `AI_API_KEY` | **Yes** | Your API Key. | `sk-proj-...` |
+| `AI_MODEL` | No | The model ID. Defaults to `gpt-4o`. | `gpt-4o`, `gpt-3.5-turbo`, `deepseek-chat` |
+| `AI_BASE_URL` | No | Custom API endpoint for proxies or other providers. | `https://api.deepseek.com` |
 
-# --- Git Platform Configuration (Fill as needed) ---
+### 🛠 System Configuration
 
-# GitHub
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxx    # Personal Access Token (PAT)
-GITHUB_WEBHOOK_SECRET=your_secret    # Webhook Secret
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `PORT` | `3000` | The port the webhook server listens on. |
+| `NODE_ENV` | `production` | Set to `development` to enable debug logs and dump requests. |
+| `CONCURRENCY_LIMIT` | `5` | Max number of files processed concurrently to avoid rate limits. |
 
-# GitLab
-GITLAB_HOST=https://gitlab.com       # Change if self-hosted
-GITLAB_TOKEN=glpat-xxxxxxxxxxxx      # Access Token
+### 📝 Review Rules
 
-# Gitea
-GITEA_HOST=https://gitea.example.com
-GITEA_TOKEN=xxxxxxxxxxxxxxxxxxxx
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `TARGET_BRANCHES` | `main,master` | Only review PRs targeting these branches. |
+| `IGNORE_PATTERNS` | `lock,dist` | Comma-separated list of keywords to ignore in filenames. |
+| `REVIEW_LANGUAGE` | `zh-CN` | The language AI uses for comments (`en`, `zh-CN`, `ja`, etc.). |
+| `SKIP_DRAFT_PR` | `true` | If `true`, the bot ignores Draft/WIP PRs. |
 
-# --- Review Rules ---
-# Target Branches (Comma separated)
-TARGET_BRANCHES=main,master,develop
-# Ignored file patterns
-IGNORE_PATTERNS=package-lock.json,dist,node_modules,yarn.lock
-# Review Language
-REVIEW_LANGUAGE=en
-# Skip Draft PR
-SKIP_DRAFT_PR=true
-# Concurrency Limit
-CONCURRENCY_LIMIT=5
+### 🔌 Platform Configuration
+
+You only need to configure the platform you are using.
+
+**GitHub**
+```bash
+GITHUB_TOKEN=ghp_...          # Personal Access Token (PAT) with repo scope
+GITHUB_WEBHOOK_SECRET=...     # Secret set in GitHub Webhook settings
 ```
+
+**GitLab**
+```bash
+GITLAB_HOST=https://gitlab.com # Or your self-hosted URL
+GITLAB_TOKEN=glpat-...         # Access Token with api scope
+```
+
+**Gitea**
+```bash
+GITEA_HOST=https://gitea.com
+GITEA_TOKEN=...
+```
+
+---
 
 ## 2. Deployment Modes
 
 ### Mode A: Webhook Server (Recommended)
 
-Run as a standalone service, listening for Webhook events in real-time.
+Ideal for teams. Run it as a long-running service (Docker) that listens to events automatically.
 
-1.  **Start Service**:
-
+1.  **Start the Service**:
     ```bash
     docker-compose up -d
     ```
 
-    Service runs on port `4000` by default.
-
 2.  **Configure Webhook**:
-    - **GitHub**: Repository Settings -> Webhooks -> Add webhook
-      - Payload URL: `http://your-server-ip:4000/webhook`
-      - Content type: `application/json`
-      - Secret: (Match .env `GITHUB_WEBHOOK_SECRET`)
-      - Events: Select `Pull requests`
-    - **GitLab**: Settings -> Webhooks
-      - URL: `http://your-server-ip:4000/webhook`
-      - Trigger: `Merge request events`
-    - **Gitea**: Settings -> Webhooks
-      - Target URL: `http://your-server-ip:4000/webhook`
-      - Events: `Pull Request`
+    Go to your repository settings and add a Webhook:
+    *   **Payload URL**: `http://<your-server-ip>:4000/webhook`
+    *   **Content Type**: `application/json`
+    *   **Secret**: Must match `GITHUB_WEBHOOK_SECRET` in `.env`.
+    *   **Events**:
+        *   GitHub: `Pull requests`, `Issue comments`
+        *   GitLab: `Merge request events`, `Note events`
+        *   Gitea: `Pull Request`, `Issue Comment`
 
 ### Mode B: CLI / CI Integration
 
-Run as a step in your CI/CD pipeline.
+Ideal for on-demand usage or keeping infrastructure stateless.
 
-## 3. ChatOps (Interactive Commands)
+**Example: GitHub Actions**
 
-In addition to automatic PR event listening, you can manually trigger reviews by typing commands in the PR/MR comment section (Issue Comments):
-
-- `/review`: Re-review the current PR.
-
-Note: Ensure **Issue comments** (GitHub/Gitea) or **Note events** (GitLab) are enabled in your Webhook settings.
-
-#### 1. GitHub Actions
-
-Add to your `.github/workflows/ai-review.yml`:
+Add `.github/workflows/review.yml`:
 
 ```yaml
 name: AI Code Review
 on: [pull_request]
-
 permissions:
-  contents: read
   pull-requests: write
+  contents: read
 
 jobs:
   review:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install -g ai-code-reviewer # Or clone and npm install
-
+      - name: Install Tool
+        run: npm install -g ai-code-reviewer
       - name: Run Review
-        # Assuming source code checkout
-        run: npx ts-node src/cli/index.ts run --platform github
+        run: aicr run --platform github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # GITHUB_EVENT_PATH is injected by Actions automatically
 ```
 
-#### 2. GitLab CI
+---
 
-In `.gitlab-ci.yml`:
+## 3. ChatOps (Interactive Commands)
 
-```yaml
-ai_review:
-  image: node:18
-  stage: test
-  script:
-    - npm install
-    - npx ts-node src/cli/index.ts run --platform gitlab --repo $CI_PROJECT_PATH --pr $CI_MERGE_REQUEST_IID --sha $CI_COMMIT_SHA --base-sha $CI_MERGE_REQUEST_DIFF_BASE_SHA
-  only:
-    - merge_requests
-  variables:
-    GITLAB_TOKEN: $GITLAB_ACCESS_TOKEN
-    AI_API_KEY: $OPENAI_API_KEY
+You can interact with the bot directly in the Pull Request comment section.
+
+### Command: `/review`
+
+**Scenario**: You have pushed a fix and want the AI to re-evaluate the changes immediately without waiting for a new commit or pushing a dummy commit.
+
+1.  Go to the **Conversation** tab of the PR.
+2.  Post a comment: `/review`.
+3.  The bot will fetch the latest Diff and post new reviews.
+
+*(Note: Requires `Issue comments` or `Note events` webhook permission)*
+
+---
+
+## 4. Customizing the AI Persona
+
+You can change how the AI reviews your code (e.g., be more strict, focus on security, or use a specific tone) by creating a `prompt.md` file in the root directory.
+
+**Example `prompt.md`**:
+
+```markdown
+You are a Senior Typescript Engineer.
+Review the code for:
+1. Potential runtime errors.
+2. Typos in variable names.
+3. Performance issues.
+
+Style: Be concise and professional. Do not compliment the code.
+Language: English.
 ```
 
-#### 3. Manual Execution (CLI)
+The system will automatically load this file and use it for the next review.
 
-You can trigger a review locally:
+---
+
+## 5. Development & Troubleshooting
+
+### Local Debugging
+To test the CLI locally without installing it globally:
 
 ```bash
-# Review GitHub PR #123
+# 1. Build
+npm run build
+
+# 2. Run CLI
+# Replace <sha> with a real commit SHA from your repo
 npx ts-node src/cli/index.ts run \
   --platform github \
   --repo owner/repo \
-  --pr 123 \
-  --sha <head_commit_sha>
+  --pr 1 \
+  --sha <head_sha>
 ```
 
-## 4. Development
+### Common Issues
 
-### Debug CLI Locally
+**Q: The bot is reviewing deleted files.**
+A: Ensure your `IGNORE_PATTERNS` includes `lock` or specific folders. The bot tries to skip deleted files automatically, but context is helpful.
 
-```bash
-# Build
-npm run build
+**Q: GitLab comments are not appearing.**
+A: GitLab's API requires precise `old_line` and `new_line` references. If the Diff is outdated, comments might fail. Try using `/review` to refresh.
 
-# Link Command (Optional)
-npm link
-
-# Run
-aicr run --help
-```
-
-### FAQ
-
-1.  **GitLab Comment Failed**:
-    - Ensure `GITLAB_HOST` and `GITLAB_TOKEN` are correct.
-    - GitLab inline comments require exact `base_sha`, `head_sha`, and `start_sha`. Provide `--base-sha` in CLI mode.
-
-2.  **Slow AI Response**:
-    - Check Diff size. Use `IGNORE_PATTERNS` to filter large files.
-    - OpenAI API latency. Try compatible local models or proxies.
+**Q: `EPERM` or Network errors in Docker.**
+A: Check if your Docker container has DNS access to the Git platform (especially for self-hosted GitLab/Gitea).
