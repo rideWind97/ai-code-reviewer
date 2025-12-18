@@ -92,4 +92,31 @@ export class GitLabProvider implements IPlatformProvider {
       }
     }
   }
+
+  async getReviewComments(event: ReviewEvent): Promise<ReviewComment[]> {
+    if (!event.projectId) return [];
+    try {
+      const discussions = await this.api.MergeRequestDiscussions.all(
+        event.projectId,
+        parseInt(event.eventId),
+      );
+
+      const comments: ReviewComment[] = [];
+      for (const discussion of discussions) {
+        for (const note of discussion.notes as any[]) {
+          if (note.position && note.position.new_path && note.position.new_line) {
+            comments.push({
+              path: note.position.new_path,
+              line: note.position.new_line,
+              body: note.body,
+            });
+          }
+        }
+      }
+      return comments;
+    } catch (e) {
+      console.error('Error fetching GitLab comments:', e);
+      return [];
+    }
+  }
 }

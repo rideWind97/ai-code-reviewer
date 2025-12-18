@@ -80,4 +80,8 @@ export class GiteaProvider implements IPlatformProvider {
       console.error('Error posting Gitea review:', error);
     }
   }
+
+  async getReviewComments(event: ReviewEvent): Promise<ReviewComment[]> {
+    return [];
+  }
 }

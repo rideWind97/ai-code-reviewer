@@ -61,4 +61,24 @@ export class GitHubProvider implements IPlatformProvider {
       comments: ghComments,
     });
   }
+
+  async getReviewComments(event: ReviewEvent): Promise<ReviewComment[]> {
+    try {
+      const { data } = await this.octokit.rest.pulls.listReviewComments({
+        owner: event.owner,
+        repo: event.repoName,
+        pull_number: parseInt(event.eventId),
+      });
+
+      return data.map((c: any) => ({
+        path: c.path,
+        line: c.line || c.original_line || 0,
+        body: c.body,
+        side: c.side as 'LEFT' | 'RIGHT',
+      }));
+    } catch (error) {
+      console.error('Error fetching GitHub comments:', error);
+      return [];
+    }
+  }
 }

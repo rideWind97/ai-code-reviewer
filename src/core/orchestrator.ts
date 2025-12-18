@@ -10,9 +10,21 @@ export class ReviewOrchestrator {
   async handleEvent(event: ReviewEvent) {
     console.log(`Processing event ${event.eventId} for ${event.repoName}`);
 
-    // 1. Get Changes
-    const files = await this.platform.getChanges(event);
-    console.log(`Found ${files.length} files changed.`);
+    // 1. Get Changes & Existing Comments
+    const [files, existingComments] = await Promise.all([
+      this.platform.getChanges(event),
+      this.platform.getReviewComments(event),
+    ]);
+
+    // Create a Set of existing comments for fast lookup "path:line"
+    const commentedLines = new Set<string>();
+    for (const comment of existingComments) {
+      commentedLines.add(`${comment.path}:${comment.line}`);
+    }
+
+    console.log(
+      `Found ${files.length} files changed and ${existingComments.length} existing comments.`,
+    );
 
     // 2. Filter & Analyze
     const allComments = [];
@@ -44,6 +56,12 @@ export class ReviewOrchestrator {
           console.log(
             `Skipping comment on line ${res.lineNumber} as it is not in the diff context.`,
           );
+          continue;
+        }
+
+        // Deduplication: Skip if already commented
+        if (commentedLines.has(`${file.filename}:${res.lineNumber}`)) {
+          console.log(`Skipping duplicate comment on ${file.filename}:${res.lineNumber}`);
           continue;
         }
 
