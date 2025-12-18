@@ -10,7 +10,7 @@ Create a `.env` file in the project root:
 
 ```ini
 # --- Service Configuration ---
-PORT=3000
+PORT=4000
 NODE_ENV=production
 
 # --- AI Service Configuration ---
@@ -55,19 +55,19 @@ Run as a standalone service, listening for Webhook events in real-time.
     docker-compose up -d
     ```
 
-    Service runs on port `3000` by default.
+    Service runs on port `4000` by default.
 
 2.  **Configure Webhook**:
     - **GitHub**: Repository Settings -> Webhooks -> Add webhook
-      - Payload URL: `http://your-server-ip:3000/webhook`
+      - Payload URL: `http://your-server-ip:4000/webhook`
       - Content type: `application/json`
       - Secret: (Match .env `GITHUB_WEBHOOK_SECRET`)
       - Events: Select `Pull requests`
     - **GitLab**: Settings -> Webhooks
-      - URL: `http://your-server-ip:3000/webhook`
+      - URL: `http://your-server-ip:4000/webhook`
       - Trigger: `Merge request events`
     - **Gitea**: Settings -> Webhooks
-      - Target URL: `http://your-server-ip:3000/webhook`
+      - Target URL: `http://your-server-ip:4000/webhook`
       - Events: `Pull Request`
 
 ### Mode B: CLI / CI Integration

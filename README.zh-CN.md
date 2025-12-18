@@ -51,7 +51,7 @@ npm run dev
 docker-compose up -d --build
 ```
 
-服务将在 `http://localhost:3000` 启动。
+服务将在 `http://localhost:4000` 启动。
 
 ## 📚 文档导航
 

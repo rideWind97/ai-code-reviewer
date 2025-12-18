@@ -51,7 +51,7 @@ npm run dev
 docker-compose up -d --build
 ```
 
-The service will start at `http://localhost:3000`.
+The service will start at `http://localhost:4000`.
 
 ## 📚 Documentation
 

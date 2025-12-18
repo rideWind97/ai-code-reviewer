@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server/index.js",
-    "dev": "ts-node src/server/index.ts",
+    "dev": "nodemon --watch src --exec ts-node src/server/index.ts",
     "cli": "ts-node src/cli/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
@@ -49,6 +49,7 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
+    "nodemon": "^3.1.11",
     "prettier": "^3.7.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
