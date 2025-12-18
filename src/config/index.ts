@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  port: process.env.PORT || 3000,
+  port: process.env.PORT || 4000,
   github: {
     token: process.env.GITHUB_TOKEN,
     webhookSecret: process.env.GITHUB_WEBHOOK_SECRET,

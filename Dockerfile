@@ -24,9 +24,9 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 # Environment variables should be passed at runtime
-ENV PORT=3000
+ENV PORT=4000
 
-EXPOSE 3000
+EXPOSE 4000
 
 CMD ["node", "dist/server/index.js"]
 

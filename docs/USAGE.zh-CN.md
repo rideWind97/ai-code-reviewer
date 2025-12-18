@@ -10,7 +10,7 @@
 
 ```ini
 # --- 服务配置 ---
-PORT=3000
+PORT=4000
 NODE_ENV=production
 
 # --- AI 服务配置 ---
@@ -55,19 +55,19 @@ IGNORE_PATTERNS=package-lock.json,dist,node_modules,yarn.lock
     docker-compose up -d
     ```
 
-    服务默认运行在 `3000` 端口。
+    服务默认运行在 `4000` 端口。
 
 2.  **配置 Webhook**:
     - **GitHub**: Repository Settings -> Webhooks -> Add webhook
-      - Payload URL: `http://your-server-ip:3000/webhook`
+      - Payload URL: `http://your-server-ip:4000/webhook`
       - Content type: `application/json`
       - Secret: (对应 .env 中的 GITHUB_WEBHOOK_SECRET)
       - Events: 选择 `Pull requests`
     - **GitLab**: Settings -> Webhooks
-      - URL: `http://your-server-ip:3000/webhook`
+      - URL: `http://your-server-ip:4000/webhook`
       - Trigger: `Merge request events`
     - **Gitea**: 仓库设置 -> Web钩子
-      - 目标 URL: `http://your-server-ip:3000/webhook`
+      - 目标 URL: `http://your-server-ip:4000/webhook`
       - 事件: `Pull Request`
 
 ### 模式 B: CLI / CI 集成

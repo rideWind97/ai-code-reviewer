@@ -16,6 +16,10 @@ const giteaProvider = new GiteaProvider();
 
 const aiProvider = new OpenAIProvider();
 
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 app.post('/webhook', async (req, res) => {
   const eventType =
     req.headers['x-github-event'] || req.headers['x-gitea-event'] || req.headers['x-gitlab-event'];
