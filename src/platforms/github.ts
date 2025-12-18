@@ -1,6 +1,7 @@
 import { Octokit } from 'octokit';
 import { IPlatformProvider, ReviewEvent, FileChange, ReviewComment } from '../interfaces';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 
 export class GitHubProvider implements IPlatformProvider {
   private octokit: Octokit;
@@ -77,7 +78,7 @@ export class GitHubProvider implements IPlatformProvider {
         side: c.side as 'LEFT' | 'RIGHT',
       }));
     } catch (error) {
-      console.error('Error fetching GitHub comments:', error);
+      logger.error({ err: error }, 'Error fetching GitHub comments');
       return [];
     }
   }

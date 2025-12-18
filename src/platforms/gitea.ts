@@ -1,5 +1,6 @@
 import { IPlatformProvider, ReviewEvent, FileChange, ReviewComment } from '../interfaces';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 import axios from 'axios';
 
 export class GiteaProvider implements IPlatformProvider {
@@ -47,7 +48,7 @@ export class GiteaProvider implements IPlatformProvider {
         blobUrl: file.raw_url,
       }));
     } catch (error) {
-      console.error('Error fetching Gitea changes:', error);
+      logger.error({ err: error }, 'Error fetching Gitea changes');
       return [];
     }
   }

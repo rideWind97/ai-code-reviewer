@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { logger } from '../utils/logger';
 
 dotenv.config();
 
@@ -12,7 +13,7 @@ function loadSystemPrompt(): string | undefined {
     try {
       return fs.readFileSync(resolvedPath, 'utf-8');
     } catch (error) {
-      console.warn(`Warning: Failed to read prompt file at ${resolvedPath}`, error);
+      logger.warn({ err: error, path: resolvedPath }, 'Warning: Failed to read prompt file');
     }
   }
 

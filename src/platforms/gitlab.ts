@@ -1,6 +1,7 @@
 import { IPlatformProvider, ReviewEvent, FileChange, ReviewComment } from '../interfaces';
 import { config } from '../config';
 import { Gitlab } from '@gitbeaker/rest';
+import { logger } from '../utils/logger';
 
 export class GitLabProvider implements IPlatformProvider {
   private api: InstanceType<typeof Gitlab>;
@@ -58,7 +59,7 @@ export class GitLabProvider implements IPlatformProvider {
         blobUrl: '', // Not easily available in changes response, can be constructed if needed
       }));
     } catch (e) {
-      console.error('GitLab getChanges error:', e);
+      logger.error({ err: e }, 'GitLab getChanges error');
       return [];
     }
   }
@@ -115,7 +116,7 @@ export class GitLabProvider implements IPlatformProvider {
       }
       return comments;
     } catch (e) {
-      console.error('Error fetching GitLab comments:', e);
+      logger.error({ err: e }, 'Error fetching GitLab comments');
       return [];
     }
   }

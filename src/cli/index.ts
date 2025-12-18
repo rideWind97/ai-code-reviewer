@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { config } from '../config';
 import { GitHubProvider } from '../platforms/github';
 import { GitLabProvider } from '../platforms/gitlab';
 import { GiteaProvider } from '../platforms/gitea';
@@ -8,6 +7,7 @@ import { OpenAIProvider } from '../ai/openai';
 import { ReviewOrchestrator } from '../core/orchestrator';
 import { ReviewEvent } from '../interfaces';
 import * as fs from 'fs';
+import { logger } from '../utils/logger';
 
 const program = new Command();
 
@@ -27,7 +27,7 @@ program
   .option('--base-sha <string>', 'Base SHA for diff comparison')
   .action(async (options) => {
     try {
-      console.log('Starting AI Code Review...');
+      logger.info('Starting AI Code Review...');
 
       let event: ReviewEvent | null = null;
       let provider;

@@ -1,5 +1,6 @@
 import { IPlatformProvider, IAIProvider, ReviewEvent, ReviewContext } from '../interfaces';
 import { getReviewableLines, shouldSkipFile } from '../utils/diff';
+import { logger } from '../utils/logger';
 
 export class ReviewOrchestrator {
   constructor(
@@ -8,7 +9,7 @@ export class ReviewOrchestrator {
   ) {}
 
   async handleEvent(event: ReviewEvent) {
-    console.log(`Processing event ${event.eventId} for ${event.repoName}`);
+    logger.info({ eventId: event.eventId, repo: event.repoName }, 'Processing event');
 
     // 1. Get Changes & Existing Comments
     const [files, existingComments] = await Promise.all([
@@ -22,8 +23,9 @@ export class ReviewOrchestrator {
       commentedLines.add(`${comment.path}:${comment.line}`);
     }
 
-    console.log(
-      `Found ${files.length} files changed and ${existingComments.length} existing comments.`,
+    logger.info(
+      { filesChanged: files.length, existingComments: existingComments.length },
+      'Changes and comments fetched',
     );
 
     // 2. Filter & Analyze
@@ -34,7 +36,7 @@ export class ReviewOrchestrator {
         continue;
       }
 
-      console.log(`Analyzing ${file.filename}...`);
+      logger.info({ filename: file.filename }, 'Analyzing file');
 
       // Parse diff to know which lines are valid for comments
       const validLines = getReviewableLines(file.rawDiff);
@@ -53,15 +55,16 @@ export class ReviewOrchestrator {
 
         // Validation: Ensure the line is in the diff
         if (!validLines.has(res.lineNumber)) {
-          console.log(
-            `Skipping comment on line ${res.lineNumber} as it is not in the diff context.`,
+          logger.debug(
+            { line: res.lineNumber },
+            'Skipping comment on line as it is not in the diff context',
           );
           continue;
         }
 
         // Deduplication: Skip if already commented
         if (commentedLines.has(`${file.filename}:${res.lineNumber}`)) {
-          console.log(`Skipping duplicate comment on ${file.filename}:${res.lineNumber}`);
+          logger.info({ file: file.filename, line: res.lineNumber }, 'Skipping duplicate comment');
           continue;
         }
 
@@ -76,11 +79,11 @@ export class ReviewOrchestrator {
 
     // 3. Post Reviews
     if (allComments.length > 0) {
-      console.log(`Posting ${allComments.length} comments...`);
+      logger.info({ count: allComments.length }, 'Posting comments');
       await this.platform.postReview(event, allComments);
-      console.log('Comments posted successfully.');
+      logger.info('Comments posted successfully');
     } else {
-      console.log('No issues found.');
+      logger.info('No issues found or all duplicates filtered.');
     }
   }
 }
