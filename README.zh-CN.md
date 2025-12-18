@@ -11,16 +11,19 @@
 ## ✨ 核心特性
 
 - **多平台支持**: 完美适配 **GitHub**、**GitLab** 和 **Gitea**。
-- **双运行模式**:
-  - 🚀 **Webhook Server**: 部署为常驻服务，自动监听 PR/MR 事件。
-  - 🛠 **CLI 工具**: 集成到 CI/CD 流水线 (GitHub Actions, GitLab CI) 中按需运行。
+- **双运行模式**: 支持 Webhook Server 常驻服务和 CLI 工具集成 (CI/CD)。
 - **智能分析**:
   - 基于 OpenAI (GPT-4) 或兼容接口 (如 DeepSeek, Anthropic)。
   - **精准 Diff 解析**: 仅分析变更代码，自动映射行号，支持内联评论 (Inline Comments)。
   - **上下文感知**: 自动忽略锁文件、图片等非代码资源。
+- **交互式指令 (ChatOps)**: 支持在评论区输入 `/review` 手动触发审查。
+- **并发控制**: 内置全局队列，防止 API 速率限制和内存溢出。
+- **多语言支持**: 支持配置审查语言 (中文/英文等)，自动跳过 Draft PR。
+- **增量审查**: 自动去重，避免对同一问题重复评论。
 - **企业级特性**:
   - Docker 一键部署。
   - 完善的 Lint & Format 检查。
+  - 结构化 JSON 日志 (Pino) 和监控端点。
   - 可配置的 Prompt 和忽略规则。
 
 ## 🚀 快速开始

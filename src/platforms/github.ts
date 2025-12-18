@@ -24,8 +24,43 @@ export class GitHubProvider implements IPlatformProvider {
         commitSha: payload.pull_request.head.sha,
         baseSha: payload.pull_request.base.sha,
         installationId: payload.installation?.id,
+        isDraft: payload.pull_request.draft,
       };
     }
+
+    // ChatOps: Handle /review command in comments
+    if (eventName === 'issue_comment' && payload.action === 'created') {
+      const body = payload.comment.body || '';
+      if (body.trim().startsWith('/review') && payload.issue.pull_request) {
+        logger.info(
+          { issue: payload.issue.number, repo: payload.repository.name },
+          'Received /review command',
+        );
+
+        try {
+          const { data: pr } = await this.octokit.rest.pulls.get({
+            owner: payload.repository.owner.login,
+            repo: payload.repository.name,
+            pull_number: payload.issue.number,
+          });
+
+          return {
+            platform: 'github',
+            eventType: 'pull_request',
+            eventId: pr.number.toString(),
+            repoName: payload.repository.name,
+            owner: payload.repository.owner.login,
+            commitSha: pr.head.sha,
+            baseSha: pr.base.sha,
+            installationId: payload.installation?.id,
+            isDraft: pr.draft,
+          };
+        } catch (error) {
+          logger.error({ err: error }, 'Failed to fetch PR details for ChatOps');
+        }
+      }
+    }
+
     return null;
   }
 

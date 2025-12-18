@@ -27,9 +27,13 @@ graph TD
 
     subgraph Core Logic
         Orchestrator[审查编排器]
+        Queue[并发队列]
         DiffParser[Diff 解析器]
         PromptEng[Prompt 引擎]
     end
+
+    Core -->|调度| Queue
+    Queue -->|执行| IAI
 
     Core -->|使用| IPlatform[接口: IPlatformProvider]
     Core -->|使用| IAI[接口: IAIProvider]

@@ -44,5 +44,7 @@ export const config = {
   review: {
     targetBranches: (process.env.TARGET_BRANCHES || 'main,master,develop').split(','),
     ignorePatterns: (process.env.IGNORE_PATTERNS || 'lock,dist,node_modules').split(','),
+    language: process.env.REVIEW_LANGUAGE || 'zh-CN',
+    skipDraft: process.env.SKIP_DRAFT_PR !== 'false', // Default to true
   },
 };

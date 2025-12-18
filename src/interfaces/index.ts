@@ -19,6 +19,7 @@ export interface ReviewEvent {
   commitSha: string; // Head SHA
   baseSha: string; // Base/Target SHA (Required for GitLab position)
   installationId?: number;
+  isDraft?: boolean;
 }
 
 export interface FileChange {

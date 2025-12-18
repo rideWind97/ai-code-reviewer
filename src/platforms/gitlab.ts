@@ -31,8 +31,34 @@ export class GitLabProvider implements IPlatformProvider {
         owner: payload.project.namespace,
         commitSha: attrs.last_commit.id,
         baseSha: attrs.target.id || payload.diff_refs?.base_sha, // Attempt to get Base SHA
+        isDraft: attrs.work_in_progress, // GitLab WIP/Draft status
       };
     }
+
+    // ChatOps: Handle /review command in notes (comments)
+    if (objectKind === 'note' && payload.merge_request) {
+      const note = payload.object_attributes.note || '';
+      if (note.trim().startsWith('/review')) {
+        logger.info(
+          { mergeRequest: payload.merge_request.iid, project: payload.project.path_with_namespace },
+          'Received /review command',
+        );
+
+        const mr = payload.merge_request;
+        return {
+          platform: 'gitlab',
+          eventType: 'merge_request',
+          eventId: mr.iid.toString(),
+          projectId: payload.project.id,
+          repoName: payload.project.path_with_namespace,
+          owner: payload.project.namespace,
+          commitSha: mr.last_commit.id,
+          baseSha: mr.target?.id || mr.diff_refs?.base_sha,
+          isDraft: mr.work_in_progress,
+        };
+      }
+    }
+
     return null;
   }
 

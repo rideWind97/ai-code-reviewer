@@ -11,15 +11,18 @@ An automated code review tool powered by LLMs (Large Language Models), supportin
 ## ✨ Core Features
 
 - **Multi-Platform Support**: Seamless integration with **GitHub**, **GitLab**, and **Gitea**.
-- **Dual Operation Modes**:
-  - 🚀 **Webhook Server**: Deployed as a persistent service to automatically listen for PR/MR events.
-  - 🛠 **CLI Tool**: Integrated into CI/CD pipelines (GitHub Actions, GitLab CI) for on-demand execution.
+- **Dual Operation Modes**: Supports Webhook Server and CLI tool for CI/CD.
 - **Intelligent Analysis**:
   - Powered by OpenAI (GPT-4) or compatible APIs (DeepSeek, Anthropic).
   - **Precise Diff Parsing**: Analyzes only changed code, maps line numbers automatically, supports Inline Comments.
   - **Context Awareness**: Automatically ignores lock files, images, and non-code assets.
+- **ChatOps**: Trigger manual reviews via `/review` command in comments.
+- **Concurrency Control**: Global queue to manage API rate limits and resources.
+- **Multi-Language**: Configurable review language (en/zh-CN) and Draft PR skipping.
+- **Incremental Review**: Deduplication logic prevents repetitive comments on updates.
 - **Enterprise Ready**:
   - Docker deployment ready.
+  - Structured JSON logging (Pino) and monitoring endpoints.
   - Comprehensive Lint & Format checks.
   - Configurable Prompts and ignore rules.
 
