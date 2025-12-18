@@ -22,28 +22,28 @@
 
 ```mermaid
 graph TD
-    User[用户 / Git 平台] -->|Webhook/CLI| Entry[入口 (Server/CLI)]
-    Entry --> Core[核心逻辑]
+    User["用户 / Git 平台"] -->|Webhook/CLI| Entry["入口 (Server/CLI)"]
+    Entry --> Core["核心逻辑"]
 
     subgraph Core Logic
-        Orchestrator[审查编排器]
-        Queue[并发队列]
-        DiffParser[Diff 解析器]
-        PromptEng[Prompt 引擎]
+        Orchestrator["审查编排器"]
+        Queue["并发队列"]
+        DiffParser["Diff 解析器"]
+        PromptEng["Prompt 引擎"]
     end
 
     Core -->|调度| Queue
     Queue -->|执行| IAI
 
-    Core -->|使用| IPlatform[接口: IPlatformProvider]
-    Core -->|使用| IAI[接口: IAIProvider]
+    Core -->|使用| IPlatform["接口: IPlatformProvider"]
+    Core -->|使用| IAI["接口: IAIProvider"]
 
-    IPlatform -->|实现| GitHub[GitHub 适配器]
-    IPlatform -->|实现| GitLab[GitLab 适配器]
-    IPlatform -->|实现| Gitea[Gitea 适配器]
+    IPlatform -->|实现| GitHub["GitHub 适配器"]
+    IPlatform -->|实现| GitLab["GitLab 适配器"]
+    IPlatform -->|实现| Gitea["Gitea 适配器"]
 
-    IAI -->|实现| OpenAI[OpenAI 适配器]
-    IAI -->|实现| OtherAI[DeepSeek/Anthropic 适配器]
+    IAI -->|实现| OpenAI["OpenAI 适配器"]
+    IAI -->|实现| OtherAI["DeepSeek/Anthropic 适配器"]
 ```
 
 ## 3. 模块详情
