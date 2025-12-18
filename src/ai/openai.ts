@@ -15,7 +15,7 @@ export class OpenAIProvider implements IAIProvider {
   async analyzeCode(fileChange: FileChange, context: ReviewContext): Promise<AIReviewResult[]> {
     if (!fileChange.rawDiff) return [];
 
-    const systemPrompt = `
+    const defaultPrompt = `
 You are an expert code reviewer.
 Your task is to review the provided code diff and identify potential bugs, security issues, and bad practices.
 Output your review in a strictly JSON format (array of objects).
@@ -29,8 +29,10 @@ The output format should be:
     "severity": "info" | "warning" | "critical"
   }
 ]
-Language: ${context.language}
     `.trim();
+
+    const systemPrompt = `${context.customPrompt || config.ai.systemPrompt || defaultPrompt}
+Language: ${context.language}`;
 
     const userPrompt = `
 File: ${fileChange.filename}
