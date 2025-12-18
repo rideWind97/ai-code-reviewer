@@ -15,7 +15,7 @@ export class GitHubProvider implements IPlatformProvider {
 
     if (
       eventName === 'pull_request' &&
-      (payload.action === 'opened' || payload.action === 'synchronize')
+      ['synchronize', 'reopened', 'opened'].includes(payload.action)
     ) {
       return {
         platform: 'github',

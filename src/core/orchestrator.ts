@@ -60,6 +60,7 @@ export class ReviewOrchestrator {
     if (allComments.length > 0) {
       console.log(`Posting ${allComments.length} comments...`);
       await this.platform.postReview(event, allComments);
+      console.log('Comments posted successfully.');
     } else {
       console.log('No issues found.');
     }

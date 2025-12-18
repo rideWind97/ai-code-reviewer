@@ -1,4 +1,5 @@
 import express from 'express';
+import * as fs from 'fs';
 import { config } from '../config';
 import { GitHubProvider } from '../platforms/github';
 import { GiteaProvider } from '../platforms/gitea';
@@ -21,6 +22,26 @@ app.get('/ping', (req, res) => {
 });
 
 app.post('/webhook', async (req, res) => {
+  // Debug: Dump request to file (Handling circular references)
+  const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key: any, value: any) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) {
+          return '[Circular]';
+        }
+        seen.add(value);
+      }
+      return value;
+    };
+  };
+
+  try {
+    fs.writeFileSync('req_dump.json', JSON.stringify(req, getCircularReplacer(), 2));
+  } catch (e) {
+    console.error('Failed to dump request', e);
+  }
+
   const eventType =
     req.headers['x-github-event'] || req.headers['x-gitea-event'] || req.headers['x-gitlab-event'];
   console.log('Received webhook:', eventType);

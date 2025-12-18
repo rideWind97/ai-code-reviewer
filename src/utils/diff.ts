@@ -1,9 +1,11 @@
 import parseDiff from 'parse-diff';
+import { config } from '../config';
 
 /**
- * Checks if a file should be skipped based on extension.
+ * Checks if a file should be skipped based on extension or config patterns.
  */
 export function shouldSkipFile(filename: string): boolean {
+  // 1. Check strict extensions (Binary/Media/etc)
   const ignoreExtensions = [
     '.lock',
     '.min.js',
@@ -31,7 +33,15 @@ export function shouldSkipFile(filename: string): boolean {
     '.so',
     '.dylib',
   ];
-  return ignoreExtensions.some((ext) => filename.endsWith(ext));
+  if (ignoreExtensions.some((ext) => filename.endsWith(ext))) return true;
+
+  // 2. Check strict filenames (Lockfiles)
+  if (filename === 'package-lock.json' || filename.endsWith('/package-lock.json')) return true;
+  if (filename === 'pnpm-lock.yaml' || filename.endsWith('/pnpm-lock.yaml')) return true;
+
+  // 3. Check User Configured Patterns (Substring match)
+  const patterns = config.review.ignorePatterns;
+  return patterns.some((pattern) => filename.includes(pattern));
 }
 
 /**
