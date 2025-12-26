@@ -1,5 +1,6 @@
 import Logger from '../utils/logger';
 import OpenAICompatibleAdapter from '../adapters/ai/openaiCompatibleAdapter';
+import GoogleGeminiAdapter from '../adapters/ai/googleGeminiAdapter';
 import config from '../config/index.js';
 
 const REVIEW_CONFIG = config.review;
@@ -20,6 +21,8 @@ class AIApiService {
       case 'openai':
       case 'deepseek': // deepseek is openai compatible
         return new OpenAICompatibleAdapter(config);
+      case 'gemini':
+        return new GoogleGeminiAdapter(config);
       // case 'anthropic':
       //   return new AnthropicAdapter(config);
       default:

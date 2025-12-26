@@ -42,7 +42,7 @@ const config = {
 
   // AI 服务配置
   ai: {
-    provider: process.env.AI_PROVIDER || 'openai', // openai, anthropic
+    provider: process.env.AI_PROVIDER || 'openai', // openai, deepseek, gemini
     apiKey: process.env.AI_API_KEY,
     apiUrl: process.env.AI_API_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     model: process.env.AI_MODEL || 'qwen-plus',
