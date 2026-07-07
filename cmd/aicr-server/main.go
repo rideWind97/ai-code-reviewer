@@ -1,9 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"os"
+
+	_ "github.com/lib/pq"
 
 	"aicr/internal/config"
 	"aicr/internal/httpserver"
@@ -27,9 +30,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// MVP 先使用内存队列，方便本地跑通链路。
-	// 后续接 PostgreSQL/SQS/Redis 时，只需要替换 queue.Queue 的实现。
-	reviewQueue := queue.NewMemory()
+	// 如果配置了数据库，就把 webhook 任务写入 PostgreSQL，供 aicr-worker 消费。
+	// 没有数据库时退回内存队列，方便新手本地只启动 HTTP 服务做 webhook 调试。
+	reviewQueue := newQueue(cfg)
 	handler := httpserver.New(httpserver.Options{
 		GitHubWebhook: github.WebhookHandler(github.WebhookOptions{
 			Secret: cfg.GitHub.WebhookSecret,
@@ -47,4 +50,17 @@ func main() {
 		slog.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
+}
+
+// newQueue 根据配置选择队列实现。
+func newQueue(cfg config.Config) queue.Queue {
+	if cfg.DatabaseURL == "" {
+		return queue.NewMemory()
+	}
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("open database", "error", err)
+		os.Exit(1)
+	}
+	return queue.NewPostgres(&queue.SQLDB{DB: db})
 }

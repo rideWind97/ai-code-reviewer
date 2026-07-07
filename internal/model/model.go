@@ -122,11 +122,36 @@ func (c *OpenAICompatibleClient) Review(ctx context.Context, input ReviewModelIn
 		return ReviewModelOutput{}, fmt.Errorf("decode response: missing choices")
 	}
 
+	return DecodeReviewOutput(chat.Choices[0].Message.Content)
+}
+
+// DecodeReviewOutput 解析模型输出，并做一次轻量 JSON repair。
+//
+// 很多模型会把 JSON 包在 ```json 代码块里；这里先尝试直接解析，失败后再提取第一个
+// JSON object 重新解析。更复杂的 repair 后续可以接专门模型或 JSON 修复器。
+func DecodeReviewOutput(content string) (ReviewModelOutput, error) {
 	var output ReviewModelOutput
-	if err := json.Unmarshal([]byte(chat.Choices[0].Message.Content), &output); err != nil {
+	if err := json.Unmarshal([]byte(content), &output); err == nil {
+		return output, nil
+	}
+	repaired := extractJSONObject(content)
+	if repaired == "" {
+		return ReviewModelOutput{}, fmt.Errorf("decode model output: invalid JSON")
+	}
+	if err := json.Unmarshal([]byte(repaired), &output); err != nil {
 		return ReviewModelOutput{}, fmt.Errorf("decode model output: %w", err)
 	}
 	return output, nil
+}
+
+// extractJSONObject 从文本中提取第一个 {...} JSON object。
+func extractJSONObject(content string) string {
+	start := strings.Index(content, "{")
+	end := strings.LastIndex(content, "}")
+	if start < 0 || end < start {
+		return ""
+	}
+	return content[start : end+1]
 }
 
 // chatRequest 是 Chat Completions API 的请求体。

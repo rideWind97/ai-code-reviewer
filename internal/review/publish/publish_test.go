@@ -12,6 +12,12 @@ func TestBuildSummaryIncludesRiskAndSummaryOnlyFindings(t *testing.T) {
 	body := BuildSummary(SummaryInput{
 		OverallSummary: "review completed",
 		RiskLevel:      "medium",
+		ModuleSummaries: []ModuleSummary{{
+			Module:       "internal",
+			FileCount:    2,
+			AddedLines:   10,
+			DeletedLines: 3,
+		}},
 		Aggregation: aggregate.Result{
 			SummaryOnly: []model.Finding{{
 				Severity: "P2",
@@ -31,6 +37,9 @@ func TestBuildSummaryIncludesRiskAndSummaryOnlyFindings(t *testing.T) {
 	}
 	if !strings.Contains(body, "Filtered findings: 1") {
 		t.Fatalf("summary missing filtered count: %s", body)
+	}
+	if !strings.Contains(body, "internal: 2 files, +10/-3") {
+		t.Fatalf("summary missing module summary: %s", body)
 	}
 }
 

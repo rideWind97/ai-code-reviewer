@@ -11,6 +11,8 @@ import (
 	"aicr/internal/review/chunker"
 	reviewcontext "aicr/internal/review/context"
 	"aicr/internal/review/publish"
+	"aicr/internal/review/scale"
+	reviewsummary "aicr/internal/review/summary"
 )
 
 // Request 是执行一次 review run 所需的最小输入。
@@ -68,8 +70,9 @@ func (r *Runner) Run(ctx context.Context, req Request) (*Run, error) {
 	if err := run.Transition(StateChunking); err != nil {
 		return run, err
 	}
-	// MVP 先按文件拆 review unit，后续可扩展成按 hunk/symbol/DAG 拆分。
-	units := chunker.ChunkPatchSet(patch)
+	// 大 PR/MR 先做规模分级，再决定拆分粒度和评论预算。
+	scaleResult := scale.Classify(patch)
+	units := chunker.ChunkPatchSetWithOptions(patch, chunker.Options{SplitHunks: scaleResult.Level != scale.LevelSmall})
 
 	if err := run.Transition(StateReviewing); err != nil {
 		return run, err
@@ -94,7 +97,7 @@ func (r *Runner) Run(ctx context.Context, req Request) (*Run, error) {
 		return run, err
 	}
 	// 聚合阶段做去重、证据等级过滤和评论预算控制，降低 review 噪音。
-	aggregation := aggregate.Aggregate(findings, aggregate.Options{InlineBudget: 5})
+	aggregation := aggregate.Aggregate(findings, aggregate.Options{InlineBudget: scaleResult.InlineBudget})
 
 	if err := run.Transition(StatePublishing); err != nil {
 		return run, err
@@ -102,20 +105,24 @@ func (r *Runner) Run(ctx context.Context, req Request) (*Run, error) {
 	// 先标记 pending，给用户一个“审查正在进行/已进入发布阶段”的状态反馈。
 	_ = r.provider.UpdateStatus(ctx, patch.Repo, patch.HeadSHA, provider.ReviewStatus{State: "pending", Description: "AI review running"})
 	summary, risk := summarize(outputs)
+	moduleSummaries := buildPublishModuleSummaries(reviewsummary.BuildModuleSummaries(patch), scaleResult.Level)
 	if err := r.provider.PublishSummary(ctx, patch.Repo, patch.Number, provider.SummaryComment{Body: publish.BuildSummary(publish.SummaryInput{
-		OverallSummary: summary,
-		RiskLevel:      risk,
-		Aggregation:    aggregation,
+		OverallSummary:  summary,
+		RiskLevel:       risk,
+		ModuleSummaries: moduleSummaries,
+		Aggregation:     aggregation,
 	})}); err != nil {
 		_ = run.Transition(StateFailedRetryable)
 		run.FailureReason = err.Error()
 		return run, err
 	}
-	for _, comment := range publish.BuildInlineComments(aggregation) {
-		if err := r.provider.PublishInline(ctx, patch.Repo, patch.Number, patch.HeadSHA, comment); err != nil {
-			_ = run.Transition(StateFailedRetryable)
-			run.FailureReason = err.Error()
-			return run, err
+	if scaleResult.PublishInline {
+		for _, comment := range publish.BuildInlineComments(aggregation) {
+			if err := r.provider.PublishInline(ctx, patch.Repo, patch.Number, patch.HeadSHA, comment); err != nil {
+				_ = run.Transition(StateFailedRetryable)
+				run.FailureReason = err.Error()
+				return run, err
+			}
 		}
 	}
 	if err := r.provider.UpdateStatus(ctx, patch.Repo, patch.HeadSHA, provider.ReviewStatus{State: "success", Description: "AI review completed"}); err != nil {
@@ -150,4 +157,23 @@ func summarize(outputs []model.ReviewModelOutput) (string, string) {
 		}
 	}
 	return summary, risk
+}
+
+// buildPublishModuleSummaries 把 summary 包的结果转换成 publish 包的轻量结构。
+//
+// small PR 不需要模块摘要；large/huge PR 才展示，避免普通 PR 的 summary 过长。
+func buildPublishModuleSummaries(input []reviewsummary.ModuleSummary, level scale.Level) []publish.ModuleSummary {
+	if level == scale.LevelSmall {
+		return nil
+	}
+	output := make([]publish.ModuleSummary, 0, len(input))
+	for _, item := range input {
+		output = append(output, publish.ModuleSummary{
+			Module:       item.Module,
+			FileCount:    item.FileCount,
+			AddedLines:   item.AddedLines,
+			DeletedLines: item.DeletedLines,
+		})
+	}
+	return output
 }

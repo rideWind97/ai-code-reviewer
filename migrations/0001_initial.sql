@@ -76,3 +76,14 @@ CREATE TABLE IF NOT EXISTS published_comments (
   body TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS review_jobs (
+  id TEXT PRIMARY KEY,
+  job_type TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  state TEXT NOT NULL DEFAULT 'queued',
+  attempts INTEGER NOT NULL DEFAULT 0,
+  locked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

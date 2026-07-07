@@ -11,9 +11,20 @@ import (
 
 // SummaryInput 是构造 summary comment 所需的数据。
 type SummaryInput struct {
-	OverallSummary string           // 所有 review unit 的总体摘要。
-	RiskLevel      string           // 整体风险等级。
-	Aggregation    aggregate.Result // 聚合后的 inline/summary/dropped 分桶。
+	OverallSummary  string           // 所有 review unit 的总体摘要。
+	RiskLevel       string           // 整体风险等级。
+	ModuleSummaries []ModuleSummary  // large/huge PR 的模块级摘要。
+	Aggregation     aggregate.Result // 聚合后的 inline/summary/dropped 分桶。
+}
+
+// ModuleSummary 是发布层使用的模块摘要。
+//
+// 这里单独定义轻量结构，避免 publish 包反向依赖 summary 包，保持依赖方向简单。
+type ModuleSummary struct {
+	Module       string // 模块名，通常是顶层目录。
+	FileCount    int    // 模块内变更文件数。
+	AddedLines   int    // 新增行数。
+	DeletedLines int    // 删除行数。
 }
 
 // BuildSummary 生成 PR/MR 总评正文。
@@ -32,6 +43,13 @@ func BuildSummary(input SummaryInput) string {
 		b.WriteString(input.RiskLevel)
 	}
 	b.WriteString("\n")
+
+	if len(input.ModuleSummaries) > 0 {
+		b.WriteString("\nChanged modules:\n")
+		for _, module := range input.ModuleSummaries {
+			b.WriteString(fmt.Sprintf("- %s: %d files, +%d/-%d\n", module.Module, module.FileCount, module.AddedLines, module.DeletedLines))
+		}
+	}
 
 	if len(input.Aggregation.SummaryOnly) > 0 {
 		b.WriteString("\nNeeds human confirmation:\n")

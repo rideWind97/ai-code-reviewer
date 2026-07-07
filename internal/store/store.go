@@ -15,10 +15,10 @@ import (
 // 后续接 PostgreSQL repository 时，实现这个接口即可。
 type Store interface {
 	// SavePatchSet 保存本次 review 的 diff 输入。
-	SavePatchSet(context.Context, provider.PatchSet) error
+	SavePatchSet(context.Context, string, provider.PatchSet) error
 
 	// SaveReviewUnits 保存 chunker 生成的审查单元。
-	SaveReviewUnits(context.Context, []chunker.ReviewUnit) error
+	SaveReviewUnits(context.Context, string, []chunker.ReviewUnit) error
 
 	// SaveFindings 保存模型和聚合阶段产出的 findings。
 	SaveFindings(context.Context, string, []model.Finding) error

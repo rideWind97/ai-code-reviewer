@@ -55,3 +55,13 @@ func TestOpenAICompatibleClientRejectsInvalidJSON(t *testing.T) {
 		t.Fatalf("error = %q", err.Error())
 	}
 }
+
+func TestRepairJSONExtractsObjectFromMarkdownFence(t *testing.T) {
+	out, err := DecodeReviewOutput("```json\n{\"summary\":\"ok\",\"risk_level\":\"low\",\"findings\":[]}\n```")
+	if err != nil {
+		t.Fatalf("DecodeReviewOutput returned error: %v", err)
+	}
+	if out.Summary != "ok" {
+		t.Fatalf("summary = %q, want ok", out.Summary)
+	}
+}

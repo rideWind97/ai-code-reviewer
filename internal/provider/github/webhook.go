@@ -12,6 +12,7 @@ import (
 	"net/http"
 
 	"aicr/internal/queue"
+	"aicr/internal/reviewjob"
 )
 
 // WebhookOptions 是 GitHub webhook handler 的依赖。
@@ -61,10 +62,19 @@ func WebhookHandler(opts WebhookOptions) http.Handler {
 		}
 
 		// job.ID 是幂等键。GitHub webhook 可能重投，同一个 head sha 不应重复审查。
+		payload, err := json.Marshal(reviewjob.Request{
+			Provider: "github",
+			Repo:     event.Repository.FullName,
+			Number:   event.PullRequest.Number,
+		})
+		if err != nil {
+			http.Error(w, "encode job", http.StatusInternalServerError)
+			return
+		}
 		job := queue.Job{
 			ID:      fmt.Sprintf("github:%s:%d:%s:%s", event.Repository.FullName, event.PullRequest.Number, event.PullRequest.Head.SHA, event.Action),
 			Type:    "review",
-			Payload: body,
+			Payload: payload,
 		}
 		if opts.Queue != nil {
 			if err := opts.Queue.Enqueue(context.Background(), job); err != nil {
