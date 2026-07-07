@@ -11,6 +11,7 @@ import (
 // 不关心 GitHub handler 里面怎么验签、怎么入队。
 type Options struct {
 	GitHubWebhook http.Handler
+	GitLabWebhook http.Handler
 }
 
 // New 创建整个 HTTP 服务的根 Handler。
@@ -29,6 +30,10 @@ func New(opts Options) http.Handler {
 	// GitHub webhook 是可选依赖，方便测试时只验证 health check。
 	if opts.GitHubWebhook != nil {
 		mux.Handle("/webhooks/github", opts.GitHubWebhook)
+	}
+	// GitLab webhook 与 GitHub webhook 并列挂载，provider 差异留给各自 handler 处理。
+	if opts.GitLabWebhook != nil {
+		mux.Handle("/webhooks/gitlab", opts.GitLabWebhook)
 	}
 	return mux
 }

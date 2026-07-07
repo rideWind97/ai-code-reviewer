@@ -12,6 +12,9 @@ func TestLoadUsesEnvironmentAndDefaults(t *testing.T) {
 	t.Setenv("AICR_MODEL_BASE_URL", "https://models.example.test/v1")
 	t.Setenv("AICR_MODEL_NAME", "reviewer")
 	t.Setenv("AICR_MODEL_API_KEY", "key")
+	t.Setenv("AICR_GITLAB_BASE_URL", "https://gitlab.example.test")
+	t.Setenv("AICR_GITLAB_TOKEN", "gitlab-token")
+	t.Setenv("AICR_GITLAB_SECRET_TOKEN", "gitlab-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -32,6 +35,15 @@ func TestLoadUsesEnvironmentAndDefaults(t *testing.T) {
 	}
 	if cfg.Model.Name != "reviewer" {
 		t.Fatalf("Model.Name = %q", cfg.Model.Name)
+	}
+	if cfg.GitLab.BaseURL != "https://gitlab.example.test" {
+		t.Fatalf("GitLab.BaseURL = %q", cfg.GitLab.BaseURL)
+	}
+	if cfg.GitLab.Token != "gitlab-token" {
+		t.Fatalf("GitLab.Token = %q", cfg.GitLab.Token)
+	}
+	if cfg.GitLab.SecretToken != "gitlab-secret" {
+		t.Fatalf("GitLab.SecretToken = %q", cfg.GitLab.SecretToken)
 	}
 }
 

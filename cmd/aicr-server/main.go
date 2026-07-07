@@ -8,6 +8,7 @@ import (
 	"aicr/internal/config"
 	"aicr/internal/httpserver"
 	"aicr/internal/provider/github"
+	"aicr/internal/provider/gitlab"
 	"aicr/internal/queue"
 )
 
@@ -33,6 +34,10 @@ func main() {
 		GitHubWebhook: github.WebhookHandler(github.WebhookOptions{
 			Secret: cfg.GitHub.WebhookSecret,
 			Queue:  reviewQueue,
+		}),
+		GitLabWebhook: gitlab.WebhookHandler(gitlab.WebhookOptions{
+			SecretToken: cfg.GitLab.SecretToken,
+			Queue:       reviewQueue,
 		}),
 	})
 

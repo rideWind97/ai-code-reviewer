@@ -21,3 +21,19 @@ func TestHealthzReturnsOK(t *testing.T) {
 		t.Fatalf("body = %q, want ok newline", rec.Body.String())
 	}
 }
+
+func TestGitLabWebhookRouteUsesInjectedHandler(t *testing.T) {
+	gitlabHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	})
+	handler := New(Options{GitLabWebhook: gitlabHandler})
+
+	req := httptest.NewRequest(http.MethodPost, "/webhooks/gitlab", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusAccepted)
+	}
+}

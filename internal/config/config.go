@@ -10,6 +10,7 @@ type Config struct {
 	Addr        string       // HTTP 服务监听地址，例如 ":8080"。
 	DatabaseURL string       // PostgreSQL 连接串；当前 MVP 先只读取，后续 store 会使用。
 	GitHub      GitHubConfig // GitHub webhook 和 API 相关配置。
+	GitLab      GitLabConfig // GitLab webhook 和 API 相关配置。
 	Model       ModelConfig  // 模型网关相关配置。
 }
 
@@ -19,6 +20,13 @@ type GitHubConfig struct {
 	AppID         string // GitHub App ID；后续换 installation token 时使用。
 	PrivateKey    string // GitHub App private key；后续换 installation token 时使用。
 	Token         string // MVP 中直接调用 GitHub API 的 token。
+}
+
+// GitLabConfig 保存 GitLab provider 需要的配置。
+type GitLabConfig struct {
+	BaseURL     string // GitLab base URL；为空时 client 默认使用 GitLab.com。
+	Token       string // GitLab API token。
+	SecretToken string // GitLab webhook secret token。
 }
 
 // ModelConfig 保存 OpenAI-compatible 模型接口配置。
@@ -41,6 +49,11 @@ func Load() (Config, error) {
 			AppID:         os.Getenv("AICR_GITHUB_APP_ID"),
 			PrivateKey:    os.Getenv("AICR_GITHUB_PRIVATE_KEY"),
 			Token:         os.Getenv("AICR_GITHUB_TOKEN"),
+		},
+		GitLab: GitLabConfig{
+			BaseURL:     os.Getenv("AICR_GITLAB_BASE_URL"),
+			Token:       os.Getenv("AICR_GITLAB_TOKEN"),
+			SecretToken: os.Getenv("AICR_GITLAB_SECRET_TOKEN"),
 		},
 		Model: ModelConfig{
 			BaseURL: os.Getenv("AICR_MODEL_BASE_URL"),
